@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Logistics & Route Optimization Platform</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              950: '#030712'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            outfit: ['Outfit', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Leaflet Map CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Premium Glassmorphism */
+    .glass-card {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px rgba(255, 255, 255, 0.05) solid;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+    
+    .glass-input {
+      background: rgba(30, 41, 59, 0.4);
+      border: 1px rgba(255, 255, 255, 0.08) solid;
+      color: white;
+    }
+    
+    .glass-input:focus {
+      border-color: rgba(99, 102, 241, 0.6);
+      outline: none;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.25);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #030712;
+      color: #f3f4f6;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, .font-heading {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #030712;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- AUTHENTICATION SCREEN -->
+  <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-brand-950 px-4">
+    <!-- Neon Background Accents -->
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+    
+    <div class="w-full max-w-md glass-card rounded-3xl p-8 relative overflow-hidden transition-all duration-300 transform scale-100 hover:shadow-brand-500/5 hover:shadow-2xl">
+      <!-- Top Accent Bar -->
+      <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-500 via-indigo-500 to-emerald-500"></div>
+      
+      <div class="flex flex-col items-center mb-8">
+        <div class="p-3 bg-brand-500/10 rounded-2xl border border-brand-500/20 mb-3">
+          <i data-lucide="route" class="w-8 h-8 text-brand-500 animate-pulse"></i>
+        </div>
+        <h2 class="text-3xl font-extrabold text-white tracking-tight">LogisticsAI</h2>
+        <p class="text-slate-400 text-sm mt-1">Smart Route Optimization Platform</p>
+      </div>
+
+      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-5">
+        <div>
+          <label class="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">Role</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" onclick="selectRole('dispatcher')" id="role-dispatcher" class="py-2.5 rounded-xl border border-slate-700 bg-slate-800/40 text-sm font-medium hover:border-brand-500/50 hover:bg-brand-500/5 transition text-white ring-2 ring-brand-500">
+              Dispatcher
+            </button>
+            <button type="button" onclick="selectRole('driver')" id="role-driver" class="py-2.5 rounded-xl border border-slate-700 bg-slate-800/40 text-sm font-medium hover:border-brand-500/50 hover:bg-brand-500/5 transition text-slate-400">
+              Driver
+            </button>
+            <button type="button" onclick="selectRole('admin')" id="role-admin" class="py-2.5 rounded-xl border border-slate-700 bg-slate-800/40 text-sm font-medium hover:border-brand-500/50 hover:bg-brand-500/5 transition text-slate-400">
+              Admin
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label for="email" class="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">Email Address</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
+              <i data-lucide="mail" class="w-4 h-4"></i>
+            </span>
+            <input type="email" id="email" class="w-full pl-10 pr-4 py-3 rounded-xl glass-input text-sm" placeholder="operator@logistics.ai" required value="dispatcher@logistics.ai">
+          </div>
+        </div>
+
+        <div>
+          <label for="password" class="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">Password</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
+              <i data-lucide="lock" class="w-4 h-4"></i>
+            </span>
+            <input type="password" id="password" class="w-full pl-10 pr-4 py-3 rounded-xl glass-input text-sm" placeholder="••••••••" required value="supersecure123">
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-slate-400">
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" class="rounded border-slate-700 bg-slate-800 text-brand-500 focus:ring-brand-500/20" checked>
+            <span>Remember me</span>
+          </label>
+          <a href="#" class="hover:text-brand-500 transition">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-brand-500/25 transition-all transform hover:-translate-y-0.5">
+          Sign In to System
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div id="main-app" class="flex-1 flex overflow-hidden hidden">
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-950 border-r border-slate-900 flex flex-col z-20">
+      <!-- Title -->
+      <div class="h-20 flex items-center px-6 border-b border-slate-900/60">
+        <div class="flex items-center space-x-3">
+          <div class="p-2 bg-brand-500/10 rounded-xl border border-brand-500/20">
+            <i data-lucide="route" class="w-5 h-5 text-brand-500"></i>
+          </div>
+          <span class="text-xl font-bold tracking-tight text-white font-heading">LogisticsAI</span>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+        <button onclick="switchTab('dashboard')" id="tab-dashboard-btn" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold transition bg-brand-500/10 text-brand-400 border border-brand-500/10">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          <span>Dashboard</span>
+        </button>
+
+        <button onclick="switchTab('map')" id="tab-map-btn" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition text-slate-400 hover:bg-slate-900 hover:text-white">
+          <i data-lucide="map" class="w-4 h-4"></i>
+          <span>Live Visualizer</span>
+        </button>
+
+        <button onclick="switchTab('deliveries')" id="tab-deliveries-btn" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition text-slate-400 hover:bg-slate-900 hover:text-white">
+          <i data-lucide="package" class="w-4 h-4"></i>
+          <span>Deliveries</span>
+        </button>
+
+        <button onclick="switchTab('analytics')" id="tab-analytics-btn" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition text-slate-400 hover:bg-slate-900 hover:text-white">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+          <span>Analytics</span>
+        </button>
+
+        <div class="pt-6 border-t border-slate-900/60 mt-6">
+          <div class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">AI ACO Simulation</div>
+          
+          <button onclick="switchTab('aco-settings')" id="tab-aco-settings-btn" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition text-slate-400 hover:bg-slate-900 hover:text-white">
+            <i data-lucide="settings-2" class="w-4 h-4"></i>
+            <span>ACO Engine Parameters</span>
+          </button>
+        </div>
+      </nav>
+
+      <!-- User Profile Info -->
+      <div class="p-4 border-t border-slate-900/60 bg-slate-950">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-brand-400" id="user-avatar">
+              D
+            </div>
+            <div>
+              <div class="text-sm font-semibold text-white truncate" id="user-name">Rahul Sharma</div>
+              <div class="text-xs text-slate-400 capitalize" id="user-role-label">Dispatcher</div>
+            </div>
+          </div>
+          <button onclick="handleLogoutClick()" class="p-2 text-slate-500 hover:text-red-400 transition" title="Log Out">
+            <i data-lucide="log-out" class="w-4.5 h-4.5"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- WORKSPACE -->
+    <main class="flex-1 flex flex-col overflow-hidden bg-brand-950 relative">
+      <!-- Neon background accents -->
+      <div class="absolute top-10 right-10 w-80 h-80 bg-brand-500/5 rounded-full blur-3xl pointer-events-none"></div>
+      
+      <!-- TOP NAVIGATION BAR -->
+      <header class="h-20 bg-slate-950/40 backdrop-blur-md border-b border-slate-900/60 flex items-center justify-between px-8 z-10">
+        <div class="flex items-center space-x-3">
+          <h2 class="text-xl font-bold text-white font-heading" id="current-tab-title">Dashboard</h2>
+          <span class="h-5 w-px bg-slate-800"></span>
+          <div class="flex items-center space-x-2 text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="font-medium">ACO Swarm Engine Online</span>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <!-- Notification Bell -->
+          <div class="relative">
+            <button class="p-2.5 bg-slate-900/60 border border-slate-800 rounded-xl hover:bg-slate-800 transition text-slate-400 hover:text-white">
+              <i data-lucide="bell" class="w-4.5 h-4.5"></i>
+              <span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-brand-500 animate-ping"></span>
+            </button>
+          </div>
+
+          <!-- Quick Simulation Stats -->
+          <div class="hidden sm:flex flex-col text-right">
+            <span class="text-xs text-slate-500 font-semibold tracking-wider uppercase">Optimization Score</span>
+            <span class="text-sm font-extrabold text-brand-400 font-heading">94.8%</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- TAB PAGES VIEW CONTAINER -->
+      <div class="flex-1 overflow-y-auto p-8 relative z-0">
+        
+        <!-- DASHBOARD TAB -->
+        <section id="tab-dashboard" class="space-y-8">
+          <!-- Stats Dashboard Widgets Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="glass-card rounded-3xl p-6 relative overflow-hidden group hover:scale-[1.01] transition duration-300">
+              <div class="absolute top-0 left-0 w-1.5 h-full bg-brand-500"></div>
+              <div class="flex justify-between items-start mb-4">
+                <span class="text-slate-400 text-xs font-bold tracking-wider uppercase">Active Deliveries</span>
+                <span class="p-2 bg-brand-500/10 rounded-xl text-brand-400"><i data-lucide="package" class="w-4 h-4"></i></span>
+              </div>
+              <div class="flex items-baseline space-x-2">
+                <span class="text-3xl font-extrabold font-heading text-white" id="stat-active-deliveries">8</span>
+                <span class="text-xs text-emerald-400 flex items-center font-semibold">
+                  <i data-lucide="trending-up" class="w-3 h-3 mr-0.5"></i> +12%
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mt-2">In transit & assigned vehicles</p>
+            </div>
+
+            <div class="glass-card rounded-3xl p-6 relative overflow-hidden group hover:scale-[1.01] transition duration-300">
+              <div class="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
+              <div class="flex justify-between items-start mb-4">
+                <span class="text-slate-400 text-xs font-bold tracking-wider uppercase">Optimization Score</span>
+                <span class="p-2 bg-emerald-500/10 rounded-xl text-emerald-400"><i data-lucide="route" class="w-4 h-4"></i></span>
+              </div>
+              <div class="flex items-baseline space-x-2">
+                <span class="text-3xl font-extrabold font-heading text-white" id="stat-opt-score">94.8%</span>
+                <span class="text-xs text-emerald-400 flex items-center font-semibold">
+                  <i data-lucide="check" class="w-3 h-3 mr-0.5"></i> Optimal
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mt-2">Route vs shortest distance path</p>
+            </div>
+
+            <div class="glass-card rounded-3xl p-6 relative overflow-hidden group hover:scale-[1.01] transition duration-300">
+              <div class="absolute top-0 left-0 w-1.5 h-full bg-indigo-500"></div>
+              <div class="flex justify-between items-start mb-4">
+                <span class="text-slate-400 text-xs font-bold tracking-wider uppercase">Est. Fuel Savings</span>
+                <span class="p-2 bg-indigo-500/10 rounded-xl text-indigo-400"><i data-lucide="gauge" class="w-4 h-4"></i></span>
+              </div>
+              <div class="flex items-baseline space-x-2">
+                <span class="text-3xl font-extrabold font-heading text-white" id="stat-fuel-savings">18.4%</span>
+                <span class="text-xs text-indigo-400 flex items-center font-semibold">
+                  <i data-lucide="trending-up" class="w-3 h-3 mr-0.5"></i> ACO active
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mt-2">Saved via dynamic swarm search</p>
+            </div>
+
+            <div class="glass-card rounded-3xl p-6 relative overflow-hidden group hover:scale-[1.01] transition duration-300">
+              <div class="absolute top-0 left-0 w-1.5 h-full bg-amber-500"></div>
+              <div class="flex justify-between items-start mb-4">
+                <span class="text-slate-400 text-xs font-bold tracking-wider uppercase">Fleet Capacity</span>
+                <span class="p-2 bg-amber-500/10 rounded-xl text-amber-400"><i data-lucide="truck" class="w-4 h-4"></i></span>
+              </div>
+              <div class="flex items-baseline space-x-2">
+                <span class="text-3xl font-extrabold font-heading text-white">82%</span>
+                <span class="text-xs text-amber-400 flex items-center font-semibold">
+                  <i data-lucide="alert-triangle" class="w-3 h-3 mr-0.5"></i> Near Peak
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mt-2">Fleet vehicles online: 4 / 5</p>
+            </div>
+          </div>
+
+          <!-- Main Dashboard Splitted Workspace -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Simulated Map Preview / Mini-Map -->
+            <div class="lg:col-span-2 glass-card rounded-3xl p-6 flex flex-col h-[480px]">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-white font-heading">Route Optimization Monitor</h3>
+                <div class="flex space-x-2">
+                  <button onclick="triggerACOSolver()" class="flex items-center space-x-2 px-4 py-2 bg-brand-600 hover:bg-brand-500 rounded-xl text-xs font-semibold text-white shadow-lg shadow-brand-600/10 transition">
+                    <i data-lucide="play" class="w-3 h-3"></i>
+                    <span>Optimize Route</span>
+                  </button>
+                  <button onclick="switchTab('map')" class="px-3.5 py-2 border border-slate-800 bg-slate-900/60 hover:bg-slate-800 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition">
+                    Expand
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Mini-Map Div -->
+              <div id="mini-map" class="flex-1 rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden relative">
+                <div class="absolute inset-0 flex items-center justify-center bg-slate-950/70 z-10" id="map-loading-overlay">
+                  <div class="flex flex-col items-center space-y-3">
+                    <i data-lucide="loader" class="w-8 h-8 text-brand-500 animate-spin"></i>
+                    <span class="text-xs text-slate-400">Loading dynamic tiles...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Swarm / Activity logs feeds -->
+            <div class="glass-card rounded-3xl p-6 flex flex-col h-[480px]">
+              <div class="flex items-center justify-between mb-4 border-b border-slate-900/60 pb-3">
+                <h3 class="text-lg font-bold text-white font-heading">Real-Time Event Stream</h3>
+                <span class="flex h-2 w-2 relative">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+              </div>
+
+              <!-- Stream Logs -->
+              <div id="activity-feed" class="flex-1 overflow-y-auto space-y-4 pr-1 text-xs scroll-smooth">
+                <!-- Loaded dynamically by Javascript -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Row: Recent Deliveries List -->
+          <div class="glass-card rounded-3xl p-6">
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="text-lg font-bold text-white font-heading">Active Dispatches</h3>
+              <button onclick="openAddDeliveryModal()" class="flex items-center space-x-2 px-4 py-2 border border-slate-800 bg-slate-900 hover:bg-slate-800 text-xs font-semibold text-white rounded-xl transition">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>Add Dispatch Order</span>
+              </button>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead>
+                  <tr class="border-b border-slate-800/60 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                    <th class="pb-3">Delivery ID</th>
+                    <th class="pb-3">Destination</th>
+                    <th class="pb-3">Vehicle / Driver</th>
+                    <th class="pb-3">Status</th>
+                    <th class="pb-3">Priority</th>
+                    <th class="pb-3">ETA</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-deliveries-list" class="divide-y divide-slate-900/40">
+                  <!-- Loaded dynamically by Javascript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- LIVE VISUALIZER TAB -->
+        <section id="tab-map" class="space-y-8 hidden">
+          <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
+            <!-- Settings & Swarm Info -->
+            <div class="xl:col-span-1 flex flex-col space-y-6">
+              <!-- Run Panel -->
+              <div class="glass-card rounded-3xl p-6 space-y-5">
+                <h3 class="text-md font-bold text-white font-heading">Simulation Controller</h3>
+                
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-slate-400 text-xs font-semibold mb-2">Simulate Vehicle Speeds</label>
+                    <div class="flex items-center space-x-4">
+                      <input type="range" min="1" max="10" value="3" id="speed-slider" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-brand-500">
+                      <span class="text-xs font-semibold text-brand-400 w-8 text-right" id="speed-value">3x</span>
+                    </div>
+                  </div>
+
+                  <div class="pt-2 border-t border-slate-900/60">
+                    <div class="flex justify-between items-center text-xs text-slate-400 mb-2">
+                      <span>Pheromone Heatmap</span>
+                      <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="heatmap-toggle" checked onchange="toggleHeatmap()" class="sr-only peer">
+                        <div class="w-8 h-4 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-brand-500"></div>
+                      </label>
+                    </div>
+                    <p class="text-[10px] text-slate-500">Visualize best routes evaluated by high pheromone density trails</p>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 pt-3">
+                  <button onclick="triggerACOSolver()" class="w-full flex items-center justify-center space-x-2 py-3 bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs rounded-xl shadow-lg transition">
+                    <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                    <span>Solve ACO</span>
+                  </button>
+                  <button onclick="resetSimulation()" class="w-full flex items-center justify-center space-x-2 py-3 border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-slate-300 font-semibold text-xs rounded-xl transition">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                    <span>Reset Map</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Solved Details -->
+              <div class="glass-card rounded-3xl p-6 space-y-4">
+                <h3 class="text-md font-bold text-white font-heading">Swarm Metrics</h3>
+                
+                <div class="space-y-3.5 text-xs">
+                  <div class="flex justify-between">
+                    <span class="text-slate-400">ACO Route Distance:</span>
+                    <span class="font-bold text-white" id="lbl-route-dist">Calculating...</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-400">Unoptimized Distance:</span>
+                    <span class="font-bold text-slate-400" id="lbl-normal-dist">Calculating...</span>
+                  </div>
+                  <div class="flex justify-between border-t border-slate-900/60 pt-3">
+                    <span class="text-slate-400">Ant Swarm Savings:</span>
+                    <span class="font-bold text-emerald-400" id="lbl-savings">Calculating...</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-400">Calculation Time:</span>
+                    <span class="font-bold text-brand-400" id="lbl-solver-time">Calculating...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Active Map -->
+            <div class="xl:col-span-3 glass-card rounded-3xl p-6 flex flex-col h-[650px] relative">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-white font-heading">Interactive Simulation Map</h3>
+                <div class="flex items-center space-x-4 text-xs">
+                  <span class="flex items-center text-slate-400">
+                    <span class="h-2 w-2 rounded-full bg-brand-500 mr-2"></span> Depot
+                  </span>
+                  <span class="flex items-center text-slate-400">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500 mr-2"></span> High Priority
+                  </span>
+                  <span class="flex items-center text-slate-400">
+                    <span class="h-2 w-2 rounded-full bg-indigo-500 mr-2"></span> Low Priority
+                  </span>
+                </div>
+              </div>
+              <div id="full-map" class="flex-1 rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden relative"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- DELIVERIES TAB -->
+        <section id="tab-deliveries" class="space-y-8 hidden">
+          <div class="flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white font-heading">Delivery Management</h3>
+            <button onclick="openAddDeliveryModal()" class="flex items-center space-x-2 px-5 py-3 bg-brand-600 hover:bg-brand-500 text-white font-semibold text-sm rounded-xl shadow-lg transition">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Create Delivery Order</span>
+            </button>
+          </div>
+
+          <!-- Table Content -->
+          <div class="glass-card rounded-3xl p-6 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm">
+                <thead>
+                  <tr class="border-b border-slate-800/60 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                    <th class="pb-4">Delivery ID</th>
+                    <th class="pb-4">Destination</th>
+                    <th class="pb-4">Driver / Vehicle</th>
+                    <th class="pb-4">Status</th>
+                    <th class="pb-4">Priority</th>
+                    <th class="pb-4">ETA</th>
+                    <th class="pb-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="management-deliveries-list" class="divide-y divide-slate-900/40">
+                  <!-- Loaded dynamically by Javascript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ANALYTICS TAB -->
+        <section id="tab-analytics" class="space-y-8 hidden">
+          <!-- Charts Grid -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="glass-card rounded-3xl p-6 flex flex-col h-[400px]">
+              <h3 class="text-md font-bold text-white font-heading mb-6">Route Efficiency Improvements (distance reduction %)</h3>
+              <div class="flex-1 relative">
+                <canvas id="efficiency-chart"></canvas>
+              </div>
+            </div>
+
+            <div class="glass-card rounded-3xl p-6 flex flex-col h-[400px]">
+              <h3 class="text-md font-bold text-white font-heading mb-6">Delivery Delivery Performance Metrics</h3>
+              <div class="flex-1 relative">
+                <canvas id="performance-chart"></canvas>
+              </div>
+            </div>
+
+            <div class="glass-card rounded-3xl p-6 flex flex-col h-[400px]">
+              <h3 class="text-md font-bold text-white font-heading mb-6">Weekly Fuel Optimization (Liters Saved)</h3>
+              <div class="flex-1 relative">
+                <canvas id="fuel-chart"></canvas>
+              </div>
+            </div>
+
+            <div class="glass-card rounded-3xl p-6 flex flex-col h-[400px]">
+              <h3 class="text-md font-bold text-white font-heading mb-6">Fleet Utilization</h3>
+              <div class="flex-1 relative">
+                <canvas id="utilization-chart"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ACO PARAMETERS TAB -->
+        <section id="tab-aco-settings" class="space-y-8 hidden">
+          <div class="max-w-3xl glass-card rounded-3xl p-8 space-y-6">
+            <div class="border-b border-slate-900 pb-4">
+              <h3 class="text-xl font-bold text-white font-heading">Ant Colony Optimization Configurator</h3>
+              <p class="text-slate-400 text-xs mt-1">Configure hyper-parameters governing structural swarm learning logic</p>
+            </div>
+
+            <form onsubmit="saveAcoParams(event)" class="space-y-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label class="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">Alpha (&alpha;)</label>
+                  <input type="number" step="0.1" min="0" max="5" id="param-alpha" class="w-full px-4 py-3 rounded-xl glass-input text-sm" value="1.0" required>
+                  <p class="text-[10px] text-slate-500 mt-1.5">Weight of pheromone trails. Higher means stronger swarm following behavior.</p>
+                </div>
+
+                <div>
+                  <label class="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">Beta (&beta;)</label>
+                  <input type="number" step="0.1" min="0" max="5" id="param-beta" class="w-full px-4 py-3 rounded-xl glass-input text-sm" value="2.0" required>
+                  <p class="text-[10px] text-slate-500 mt-1.5">Weight of heuristic values (distance). Higher favors standard greedy shortest paths.</p>
+                </div>
+
+                <div>
+                  <label class="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">Evaporation Rate (&rho;)</label>
+                  <input type="number" step="0.05" min="0" max="1" id="param-rho" class="w-full px-4 py-3 rounded-xl glass-input text-sm" value="0.1" required>
+                  <p class="text-[10px] text-slate-500 mt-1.5">Pheromone decay speed. High rate prevents premature stagnation, low rate locks paths fast.</p>
+                </div>
+
+                <div>
+                  <label class="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">Swarm Ant Count</label>
+                  <input type="number" min="1" max="100" id="param-ants" class="w-full px-4 py-3 rounded-xl glass-input text-sm" value="20" required>
+                  <p class="text-[10px] text-slate-500 mt-1.5">Number of simulated ants deployed per iteration of routing calculation.</p>
+                </div>
+
+                <div>
+                  <label class="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">Optimization Iterations</label>
+                  <input type="number" min="1" max="500" id="param-iterations" class="w-full px-4 py-3 rounded-xl glass-input text-sm" value="50" required>
+                  <p class="text-[10px] text-slate-500 mt-1.5">Cycles of ants running through node layouts to optimize and update pheromones.</p>
+                </div>
+
+                <div>
+                  <label class="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">Vehicle Load Capacity</label>
+                  <input type="number" min="1" max="10000" id="param-capacity" class="w-full px-4 py-3 rounded-xl glass-input text-sm" value="1500" required>
+                  <p class="text-[10px] text-slate-500 mt-1.5">Standard maximum package payload carrying capacity per fleet delivery truck.</p>
+                </div>
+              </div>
+
+              <div class="flex justify-end pt-4 border-t border-slate-900/60">
+                <button type="submit" class="px-6 py-3 bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs rounded-xl shadow-lg transition">
+                  Save Settings & Re-Solve
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ADD DELIVERY MODAL -->
+  <div id="add-delivery-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-brand-950/80 backdrop-blur-sm px-4 hidden">
+    <div class="w-full max-w-lg glass-card rounded-3xl p-8 relative overflow-hidden">
+      <div class="flex justify-between items-center mb-6 border-b border-slate-900/60 pb-3">
+        <h3 class="text-xl font-bold text-white font-heading">Add New Dispatch Delivery</h3>
+        <button onclick="closeAddDeliveryModal()" class="text-slate-500 hover:text-white transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleAddDeliverySubmit(event)" class="space-y-5">
+        <div>
+          <label for="dest-address" class="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">Destination Area</label>
+          <select id="dest-address" class="w-full px-4 py-3 rounded-xl glass-input text-sm" required>
+            <option value="Marina District" data-lat="37.8037" data-lng="-122.4368">Marina District, SF (37.8037, -122.4368)</option>
+            <option value="SoMa" data-lat="37.7785" data-lng="-122.4056">SoMa Hub, SF (37.7785, -122.4056)</option>
+            <option value="Mission District" data-lat="37.7599" data-lng="-122.4148">Mission District, SF (37.7599, -122.4148)</option>
+            <option value="Castro" data-lat="37.7609" data-lng="-122.4350">Castro District, SF (37.7609, -122.4350)</option>
+            <option value="Financial District" data-lat="37.7946" data-lng="-122.3999">Financial District, SF (37.7946, -122.3999)</option>
+            <option value="Richmond District" data-lat="37.7780" data-lng="-122.4820">Richmond District, SF (37.7780, -122.4820)</option>
+            <option value="Sunset District" data-lat="37.7500" data-lng="-122.4860">Sunset District, SF (37.7500, -122.4860)</option>
+            <option value="Pacific Heights" data-lat="37.7925" data-lng="-122.4356">Pacific Heights, SF (37.7925, -122.4356)</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="priority" class="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">Priority</label>
+            <select id="priority" class="w-full px-4 py-3 rounded-xl glass-input text-sm">
+              <option value="High">High</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="Low">Low</option>
+              <option value="Critical">Critical</option>
+            </select>
+          </div>
+          <div>
+            <label for="driver" class="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">Assign Driver</label>
+            <select id="driver" class="w-full px-4 py-3 rounded-xl glass-input text-sm">
+              <option value="Rahul Sharma">Rahul Sharma</option>
+              <option value="Amit Verma">Amit Verma</option>
+              <option value="Neha Singh">Neha Singh</option>
+              <option value="Arjun Patel">Arjun Patel</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label for="package-weight" class="block text-slate-300 text-xs font-semibold uppercase tracking-wider mb-2">Package Weight (kg)</label>
+          <input type="number" id="package-weight" min="1" max="1000" class="w-full px-4 py-3 rounded-xl glass-input text-sm" value="45" required>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-4 border-t border-slate-900/60">
+          <button type="button" onclick="closeAddDeliveryModal()" class="px-5 py-3 border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-xs font-semibold rounded-xl transition text-slate-400 hover:text-white">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-3 bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs rounded-xl shadow-lg transition">
+            Dispatch Order
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // GLOBAL STATE VARIABLES
+    let activeRole = 'dispatcher';
+    let currentTab = 'dashboard';
+    
+    // Ant Colony Optimization State
+    let acoParams = {
+      alpha: 1.0,
+      beta: 2.0,
+      rho: 0.1,
+      ants: 20,
+      iterations: 50,
+      capacity: 1500
+    };
+
+    // Simulated Datasets
+    let deliveries = [
+      { id: 'DLV-1001', address: 'SoMa Hub, SF', driver: 'Rahul Sharma', status: 'In Transit', priority: 'High', lat: 37.7785, lng: -122.4056, eta: '18 mins', weight: 120 },
+      { id: 'DLV-1002', address: 'Mission District, SF', driver: 'Amit Verma', status: 'Delivered', priority: 'Medium', lat: 37.7599, lng: -122.4148, eta: 'Completed', weight: 80 },
+      { id: 'DLV-1003', address: 'Castro District, SF', driver: 'Neha Singh', status: 'Pending', priority: 'Critical', lat: 37.7609, lng: -122.4350, eta: '42 mins', weight: 240 },
+      { id: 'DLV-1004', address: 'Financial District, SF', driver: 'Arjun Patel', status: 'Assigned', priority: 'Low', lat: 37.7946, lng: -122.3999, eta: '1 hr', weight: 350 },
+      { id: 'DLV-1005', address: 'Marina District, SF', driver: 'Rahul Sharma', status: 'In Transit', priority: 'Critical', lat: 37.8037, lng: -122.4368, eta: '12 mins', weight: 15 },
+    ];
+
+    // San Francisco Depot Coordinate
+    const depotCoords = { lat: 37.7749, lng: -122.4194, address: 'Central Operations Depot, SF' };
+
+    // Leaflet Maps references
+    let miniMap, fullMap;
+    let miniMapMarkerGroup, fullMapMarkerGroup;
+    let miniMapRouteLines = [], fullMapRouteLines = [];
+    let vehiclesMarkers = {};
+    let isMovingSimulation = false;
+    let simulationTimer = null;
+    let bestAcoPath = [];
+    let pheromoneGrid = [];
+
+    // Charts references
+    let efficiencyChart, performanceChart, fuelChart, utilizationChart;
+
+    // INITIALIZATION
+    window.onload = function() {
+      lucide.createIcons();
+      initLogs();
+    };
+
+    function selectRole(role) {
+      activeRole = role;
+      document.querySelectorAll('[id^="role-"]').forEach(btn => {
+        btn.classList.remove('ring-2', 'ring-brand-500', 'text-white');
+        btn.classList.add('text-slate-400');
+      });
+      document.getElementById(`role-${role}`).classList.add('ring-2', 'ring-brand-500', 'text-white');
+      document.getElementById(`role-${role}`).classList.remove('text-slate-400');
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      
+      // Update User details in sidebar
+      const names = {
+        'dispatcher': 'Rahul Sharma',
+        'driver': 'Amit Verma',
+        'admin': 'Neha Singh'
+      };
+      const avatarLetters = {
+        'dispatcher': 'R',
+        'driver': 'A',
+        'admin': 'N'
+      };
+      
+      document.getElementById('user-name').innerText = names[activeRole];
+      document.getElementById('user-avatar').innerText = avatarLetters[activeRole];
+      document.getElementById('user-role-label').innerText = activeRole;
+
+      // Swap screens
+      document.getElementById('auth-screen').classList.add('hidden');
+      document.getElementById('main-app').classList.remove('hidden');
+
+      // Initialize UI data & maps
+      initDashboardView();
+      initMaps();
+      initCharts();
+      logEvent('SYSTEM', `User logged in with role [${activeRole.toUpperCase()}]`);
+      logEvent('ENGINE', 'Ant Colony Optimization Engine connected to database collections.');
+    }
+
+    function handleLogoutClick() {
+      document.getElementById('main-app').classList.add('hidden');
+      document.getElementById('auth-screen').classList.remove('hidden');
+      if (simulationTimer) clearInterval(simulationTimer);
+      isMovingSimulation = false;
+    }
+
+    // EVENT LOGGER SIMULATION
+    function initLogs() {
+      const feed = document.getElementById('activity-feed');
+      feed.innerHTML = '';
+      logEvent('SYSTEM', 'Core Kernel bootstrap initialization successful.');
+      logEvent('SECURITY', 'SSL Handshake successful: Port 443 opened.');
+      logEvent('DATABASE', 'MongoDB Atlas cloud instance connected: Cluster01.');
+    }
+
+    function logEvent(source, text) {
+      const feed = document.getElementById('activity-feed');
+      if (!feed) return;
+      
+      const time = new Date().toLocaleTimeString();
+      let colorClass = 'text-brand-400';
+      if (source === 'SYSTEM') colorClass = 'text-slate-400';
+      if (source === 'ERROR') colorClass = 'text-red-400';
+      if (source === 'ENGINE') colorClass = 'text-amber-400';
+      if (source === 'MAP') colorClass = 'text-emerald-400';
+      if (source === 'DISPATCH') colorClass = 'text-indigo-400';
+
+      const log = document.createElement('div');
+      log.className = 'py-1.5 border-b border-slate-900/40 flex items-start space-x-2 animate-fadeIn';
+      log.innerHTML = `
+        <span class="text-slate-600 shrink-0 font-mono">[${time}]</span>
+        <span class="font-bold ${colorClass} shrink-0">[${source}]</span>
+        <span class="text-slate-300">${text}</span>
+      `;
+      feed.prepend(log);
+      feed.scrollTop = 0;
+    }
+
+    // TAB MANAGEMENT
+    function switchTab(tabId) {
+      currentTab = tabId;
+      
+      // Hide all tabs
+      document.querySelectorAll('section[id^="tab-"]').forEach(section => section.classList.add('hidden'));
+      // Show targeted tab
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+      // Update Top Nav Title
+      const titles = {
+        'dashboard': 'Control Dashboard',
+        'map': 'Live Swarm & Fleet Visualizer',
+        'deliveries': 'Dispatch Order Database',
+        'analytics': 'Swarm Performance Analytics',
+        'aco-settings': 'ACO Hyper-parameters'
+      };
+      document.getElementById('current-tab-title').innerText = titles[tabId];
+
+      // Update sidebar active buttons
+      document.querySelectorAll('aside nav button').forEach(btn => {
+        btn.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition text-slate-400 hover:bg-slate-900 hover:text-white";
+      });
+      const activeBtn = document.getElementById(`tab-${tabId}-btn`);
+      if (activeBtn) {
+        activeBtn.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold transition bg-brand-500/10 text-brand-400 border border-brand-500/10";
+      }
+
+      // Handle Map resize hooks on display toggle
+      if (tabId === 'map' && fullMap) {
+        setTimeout(() => {
+          fullMap.invalidateSize();
+        }, 100);
+      }
+      if (tabId === 'dashboard' && miniMap) {
+        setTimeout(() => {
+          miniMap.invalidateSize();
+        }, 100);
+      }
+    }
+
+    // MAPS INITIALIZATION AND PATH SIMULATION
+    function initMaps() {
+      // Leaflet Map config
+      const defaultCenter = [37.7749, -122.4194]; // SF Depot Center
+      
+      // Remove loaders
+      document.getElementById('map-loading-overlay')?.classList.add('hidden');
+
+      // Setup minimap
+      miniMap = L.map('mini-map', {
+        zoomControl: false,
+        attributionControl: false
+      }).setView(defaultCenter, 13);
+      
+      // Setup fullmap
+      fullMap = L.map('full-map', {
+        zoomControl: true,
+        attributionControl: false
+      }).setView(defaultCenter, 13);
+
+      // Dark Mode Tile Layer styling
+      const tilesUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+      
+      L.tileLayer(tilesUrl, { maxZoom: 20 }).addTo(miniMap);
+      L.tileLayer(tilesUrl, { maxZoom: 20 }).addTo(fullMap);
+
+      // Initialize groups
+      miniMapMarkerGroup = L.layerGroup().addTo(miniMap);
+      fullMapMarkerGroup = L.layerGroup().addTo(fullMap);
+
+      // Populate Markers
+      refreshMapMarkers();
+    }
+
+    function refreshMapMarkers() {
+      if (!miniMapMarkerGroup || !fullMapMarkerGroup) return;
+
+      miniMapMarkerGroup.clearLayers();
+      fullMapMarkerGroup.clearLayers();
+
+      // Custom SVGs for Markers to look super premium
+      const depotIconHtml = `
+        <div class="relative flex items-center justify-center">
+          <div class="absolute inline-flex h-8 w-8 rounded-full bg-brand-500/40 animate-ping"></div>
+          <div class="relative bg-brand-600 text-white p-2 rounded-xl border border-brand-400 shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 10-6-6H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2Z"/><path d="M10 14h4"/><path d="M12 12v4"/></svg>
+          </div>
+        </div>
+      `;
+
+      const deliveryIconHtml = (priority) => {
+        let colorClass = 'bg-indigo-600 border-indigo-400';
+        if (priority === 'Critical') colorClass = 'bg-red-600 border-red-400';
+        if (priority === 'High') colorClass = 'bg-amber-600 border-amber-400';
+        if (priority === 'Low') colorClass = 'bg-emerald-600 border-emerald-400';
+
+        return `
+          <div class="relative flex items-center justify-center">
+            <div class="${colorClass} text-white p-1.5 rounded-lg border shadow-md transform hover:scale-110 transition">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            </div>
+          </div>
+        `;
+      };
+
+      const depotIcon = L.divIcon({ html: depotIconHtml, className: '', iconSize: [32, 32], iconAnchor: [16, 16] });
+      
+      // Lay depot marker
+      L.marker([depotCoords.lat, depotCoords.lng], { icon: depotIcon })
+        .bindPopup(`<b>${depotCoords.address}</b><br/>Starting Fleet Center`)
+        .addTo(miniMapMarkerGroup);
+      
+      L.marker([depotCoords.lat, depotCoords.lng], { icon: depotIcon })
+        .bindPopup(`<b>${depotCoords.address}</b><br/>Starting Fleet Center`)
+        .addTo(fullMapMarkerGroup);
+
+      // Lay deliveries
+      deliveries.forEach(dlv => {
+        if (dlv.status === 'Delivered') return; // Don't draw completed dispatches on map
+
+        const icon = L.divIcon({ html: deliveryIconHtml(dlv.priority), className: '', iconSize: [24, 24], iconAnchor: [12, 12] });
+        
+        const popupText = `
+          <div class="text-xs text-slate-800">
+            <h4 class="font-bold border-b pb-1 mb-1">${dlv.id}</h4>
+            <p><b>Dest:</b> ${dlv.address}</p>
+            <p><b>Priority:</b> ${dlv.priority}</p>
+            <p><b>Payload:</b> ${dlv.weight} kg</p>
+            <p><b>Driver:</b> ${dlv.driver}</p>
+            <p><b>Status:</b> ${dlv.status}</p>
+          </div>
+        `;
+
+        L.marker([dlv.lat, dlv.lng], { icon: icon })
+          .bindPopup(popupText)
+          .addTo(miniMapMarkerGroup);
+
+        L.marker([dlv.lat, dlv.lng], { icon: icon })
+          .bindPopup(popupText)
+          .addTo(fullMapMarkerGroup);
+      });
+    }
+
+    // CLIENT SIDE ACO IMPLEMENTATION!
+    // Dynamically calculates the shortest route visiting all nodes and returning back
+    function solveAcoClientSide() {
+      logEvent('ENGINE', `Running Ant Colony Optimization [Alpha=${acoParams.alpha}, Beta=${acoParams.beta}, Decay=${acoParams.rho}, Ants=${acoParams.ants}]`);
+      const t0 = performance.now();
+
+      // Gather active points to visit
+      const nodes = [depotCoords, ...deliveries.filter(d => d.status !== 'Delivered')];
+      const N = nodes.length;
+
+      if (N <= 1) {
+        logEvent('ERROR', 'No active dispatches available for route calculations.');
+        return;
+      }
+
+      // Calculate distance matrix (Haversine formula in km)
+      function getDistance(n1, n2) {
+        const R = 6371; // Earth radius
+        const dLat = (n2.lat - n1.lat) * Math.PI / 180;
+        const dLng = (n2.lng - n1.lng) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(n1.lat * Math.PI / 180) * Math.cos(n2.lat * Math.PI / 180) * 
+                  Math.sin(dLng/2) * Math.sin(dLng/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+      }
+
+      let distMatrix = Array(N).fill(0).map(() => Array(N).fill(0));
+      for (let i = 0; i < N; i++) {
+        for (let j = 0; j < N; j++) {
+          distMatrix[i][j] = getDistance(nodes[i], nodes[j]);
+        }
+      }
+
+      // Initialize pheromones
+      let pheromones = Array(N).fill(0).map(() => Array(N).fill(0.1));
+      let bestPath = [];
+      let bestDist = Infinity;
+
+      // Iteration Loop
+      for (let iter = 0; iter < acoParams.iterations; iter++) {
+        let paths = [];
+        let pathsDistances = [];
+
+        // Ants Loop
+        for (let ant = 0; ant < acoParams.ants; ant++) {
+          let visited = Array(N).fill(false);
+          let current = 0; // Starts at Depot
+          visited[current] = true;
+          let path = [current];
+          let totalDist = 0;
+
+          // Visit all nodes
+          for (let step = 0; step < N - 1; step++) {
+            // Probabilistic selection
+            let probabilities = [];
+            let sumProb = 0;
+
+            for (let next = 0; next < N; next++) {
+              if (!visited[next]) {
+                const tau = Math.pow(pheromones[current][next], acoParams.alpha);
+                const eta = Math.pow(1.0 / (distMatrix[current][next] || 0.0001), acoParams.beta);
+                const p = tau * eta;
+                probabilities.push({ node: next, value: p });
+                sumProb += p;
+              } else {
+                probabilities.push({ node: next, value: 0 });
+              }
+            }
+
+            // Roulette selection
+            let rand = Math.random() * sumProb;
+            let cumulative = 0;
+            let nextNode = -1;
+
+            for (let k = 0; k < probabilities.length; k++) {
+              if (probabilities[k].value > 0) {
+                cumulative += probabilities[k].value;
+                if (rand <= cumulative) {
+                  nextNode = probabilities[k].node;
+                  break;
+                }
+              }
+            }
+
+            if (nextNode === -1) {
+              // Fallback to first unvisited
+              nextNode = visited.findIndex(v => !v);
+            }
+
+            path.push(nextNode);
+            visited[nextNode] = true;
+            totalDist += distMatrix[current][nextNode];
+            current = nextNode;
+          }
+
+          // Return to Depot
+          path.push(0);
+          totalDist += distMatrix[current][0];
+
+          paths.push(path);
+          pathsDistances.push(totalDist);
+
+          // Update Best Global Route
+          if (totalDist < bestDist) {
+            bestDist = totalDist;
+            bestPath = path;
+          }
+        }
+
+        // Pheromone Evaporation
+        for (let i = 0; i < N; i++) {
+          for (let j = 0; j < N; j++) {
+            pheromones[i][j] *= (1.0 - acoParams.rho);
+          }
+        }
+
+        // Lay pheromones on trails of best paths
+        for (let a = 0; a < paths.length; a++) {
+          const path = paths[a];
+          const dist = pathsDistances[a];
+          const pheromoneDeposit = 1.0 / dist;
+          for (let s = 0; s < path.length - 1; s++) {
+            pheromones[path[s]][path[s+1]] += pheromoneDeposit;
+            pheromones[path[s+1]][path[s]] += pheromoneDeposit; // Symmetric
+          }
+        }
+      }
+
+      const t1 = performance.now();
+      const calcTime = (t1 - t0).toFixed(2);
+
+      // Map node indexes back to coordinates
+      bestAcoPath = bestPath.map(idx => nodes[idx]);
+      pheromoneGrid = pheromones;
+
+      // Unoptimized default path (straight index order)
+      let unoptDist = 0;
+      for(let i=0; i<N-1; i++) unoptDist += distMatrix[i][i+1];
+      unoptDist += distMatrix[N-1][0];
+
+      // Update GUI Metrics Labels
+      document.getElementById('lbl-route-dist').innerText = `${bestDist.toFixed(2)} km`;
+      document.getElementById('lbl-normal-dist').innerText = `${unoptDist.toFixed(2)} km`;
+      const savings = ((unoptDist - bestDist) / unoptDist * 100);
+      document.getElementById('lbl-savings').innerText = `${savings > 0 ? savings.toFixed(1) : 0}%`;
+      document.getElementById('lbl-solver-time').innerText = `${calcTime} ms`;
+
+      // Draw Paths
+      drawAcoRoutesOnMaps(bestAcoPath);
+      logEvent('ENGINE', `Optimal ACO Swarm path resolved! Total Distance: ${bestDist.toFixed(2)} km. Fuel reduction: ${Math.max(0, savings).toFixed(1)}%.`);
+    }
+
+    function drawAcoRoutesOnMaps(pathPoints) {
+      // Clear previous lines
+      miniMapRouteLines.forEach(l => miniMap.removeLayer(l));
+      fullMapRouteLines.forEach(l => fullMap.removeLayer(l));
+      miniMapRouteLines = [];
+      fullMapRouteLines = [];
+
+      const coords = pathPoints.map(p => [p.lat, p.lng]);
+
+      // Glow route style
+      const routeOptions = {
+        color: '#6366f1',
+        weight: 4,
+        opacity: 0.85,
+        lineCap: 'round',
+        lineJoin: 'round'
+      };
+
+      const lineMini = L.polyline(coords, routeOptions).addTo(miniMap);
+      const lineFull = L.polyline(coords, routeOptions).addTo(fullMap);
+      
+      miniMapRouteLines.push(lineMini);
+      fullMapRouteLines.push(lineFull);
+
+      // Fit map bounds to show full route
+      fullMap.fitBounds(lineFull.getBounds(), { padding: [40, 40] });
+      miniMap.fitBounds(lineMini.getBounds(), { padding: [20, 20] });
+
+      // Start movement simulation
+      animateTelemetryMovements(pathPoints);
+    }
+
+    function toggleHeatmap() {
+      const active = document.getElementById('heatmap-toggle').checked;
+      logEvent('MAP', `Heatmap overlay visualization ${active ? 'ENABLED' : 'DISABLED'}`);
+      // In a real system, this would toggle opacity layers.
+    }
+
+    // ANIMATE VECHICLE RUNNING THE SOLVED ROUTE!
+    function animateTelemetryMovements(pathPoints) {
+      if (simulationTimer) clearInterval(simulationTimer);
+      
+      // Setup animated markers for simulated vehicles on map
+      const truckSvg = `
+        <div class="bg-indigo-500 text-white p-2 rounded-full border-2 border-white shadow-xl flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M19 18h2a1 1 0 0 0 1-1v-5.05a1.002 1.002 0 0 0-.293-.707l-4.07-4.07a1 1 0 0 0-.707-.293H14"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        </div>
+      `;
+      const truckIcon = L.divIcon({ html: truckSvg, className: '', iconSize: [30, 30], iconAnchor: [15, 15] });
+
+      // Remove existing vehicle markers from maps
+      Object.values(vehiclesMarkers).forEach(m => {
+        miniMap.removeLayer(m.mini);
+        fullMap.removeLayer(m.full);
+      });
+      vehiclesMarkers = {};
+
+      let currentStep = 0;
+      const speedSlider = document.getElementById('speed-slider');
+      
+      // Initial Position
+      const initPt = pathPoints[0];
+      const vMarkerMini = L.marker([initPt.lat, initPt.lng], { icon: truckIcon }).addTo(miniMap);
+      const vMarkerFull = L.marker([initPt.lat, initPt.lng], { icon: truckIcon }).addTo(fullMap);
+      
+      vehiclesMarkers['truck-01'] = { mini: vMarkerMini, full: vMarkerFull };
+
+      isMovingSimulation = true;
+      logEvent('MAP', 'Simulating logistics fleet telemetry paths along ACO swarm nodes.');
+
+      // Simulation Interval ticking
+      simulationTimer = setInterval(() => {
+        if (!isMovingSimulation) {
+          clearInterval(simulationTimer);
+          return;
+        }
+
+        currentStep++;
+        if (currentStep >= pathPoints.length) {
+          // Loop completed back to depot
+          logEvent('MAP', 'Telemetry vehicle simulated delivery cycle complete. Returning to depot.');
+          clearInterval(simulationTimer);
+          isMovingSimulation = false;
+          return;
+        }
+
+        const nextPt = pathPoints[currentStep];
+        
+        // Move markers smoothly
+        vehiclesMarkers['truck-01'].mini.setLatLng([nextPt.lat, nextPt.lng]);
+        vehiclesMarkers['truck-01'].full.setLatLng([nextPt.lat, nextPt.lng]);
+
+        // Trigger updates in feed logs
+        if (nextPt.address !== depotCoords.address) {
+          logEvent('DISPATCH', `Vehicle [TRK-092] reached: ${nextPt.address}. Fuel usage optimized.`);
+        }
+      }, 3000 / parseInt(speedSlider.value));
+
+      // Slider update listener
+      speedSlider.oninput = function() {
+        document.getElementById('speed-value').innerText = `${this.value}x`;
+        if (isMovingSimulation) {
+          // Restart timer with new speed
+          animateTelemetryMovements(pathPoints);
+        }
+      };
+    }
+
+    function triggerACOSolver() {
+      solveAcoClientSide();
+      // Auto-switch to Live Visualizer map view to wow the user
+      switchTab('map');
+    }
+
+    function resetSimulation() {
+      if (simulationTimer) clearInterval(simulationTimer);
+      isMovingSimulation = false;
+      
+      // Clear paths
+      miniMapRouteLines.forEach(l => miniMap.removeLayer(l));
+      fullMapRouteLines.forEach(l => fullMap.removeLayer(l));
+      miniMapRouteLines = [];
+      fullMapRouteLines = [];
+
+      Object.values(vehiclesMarkers).forEach(m => {
+        miniMap.removeLayer(m.mini);
+        fullMap.removeLayer(m.full);
+      });
+      vehiclesMarkers = {};
+
+      refreshMapMarkers();
+      
+      // Reset metrics
+      document.getElementById('lbl-route-dist').innerText = '0.00 km';
+      document.getElementById('lbl-normal-dist').innerText = '0.00 km';
+      document.getElementById('lbl-savings').innerText = '0%';
+      document.getElementById('lbl-solver-time').innerText = '0 ms';
+
+      logEvent('SYSTEM', 'Simulation workspace reset. Telemetry metrics zeroed.');
+    }
+
+    // INITIALIZE CHARTS
+    function initCharts() {
+      const configDefaults = (label, labels, data, colors) => ({
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: label,
+            data: data,
+            borderColor: colors[0],
+            backgroundColor: colors[1],
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } },
+            y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } }
+          }
+        }
+      });
+
+      // Efficiency Improvement Chart
+      const effCtx = document.getElementById('efficiency-chart').getContext('2d');
+      efficiencyChart = new Chart(effCtx, configDefaults(
+        'Savings %',
+        ['Run 1', 'Run 2', 'Run 3', 'Run 4', 'Run 5', 'Run 6'],
+        [10, 14, 15, 17, 18, 21],
+        ['#6366f1', 'rgba(99, 102, 241, 0.1)']
+      ));
+
+      // Delivery Performance Chart
+      const perfCtx = document.getElementById('performance-chart').getContext('2d');
+      performanceChart = new Chart(perfCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+          datasets: [
+            { label: 'On Time', data: [94, 96, 92, 95, 98, 97], backgroundColor: 'rgba(16, 185, 129, 0.85)' },
+            { label: 'Delayed', data: [6, 4, 8, 5, 2, 3], backgroundColor: 'rgba(239, 68, 68, 0.85)' }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+            y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } }
+          }
+        }
+      });
+
+      // Fuel Chart
+      const fuelCtx = document.getElementById('fuel-chart').getContext('2d');
+      fuelChart = new Chart(fuelCtx, configDefaults(
+        'Liters Saved',
+        ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4', 'Wk 5'],
+        [320, 410, 480, 560, 680],
+        ['#10b981', 'rgba(16, 185, 129, 0.1)']
+      ));
+
+      // Fleet utilization pie
+      const utilCtx = document.getElementById('utilization-chart').getContext('2d');
+      utilizationChart = new Chart(utilCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Active', 'Idle', 'Maintenance'],
+          datasets: [{
+            data: [75, 15, 10],
+            backgroundColor: ['#6366f1', '#475569', '#ef4444']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: '#f3f4f6' }
+            }
+          }
+        }
+      });
+    }
+
+    // INITIALIZE DATA LISTS
+    function initDashboardView() {
+      refreshDeliveriesLists();
+      document.getElementById('stat-active-deliveries').innerText = deliveries.filter(d => d.status !== 'Delivered').length;
+    }
+
+    function refreshDeliveriesLists() {
+      const dashList = document.getElementById('dashboard-deliveries-list');
+      const manageList = document.getElementById('management-deliveries-list');
+      
+      dashList.innerHTML = '';
+      manageList.innerHTML = '';
+
+      deliveries.forEach(dlv => {
+        // Priority Badge styling helper
+        let priorityColor = 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
+        if (dlv.priority === 'Critical') priorityColor = 'bg-red-500/10 text-red-400 border-red-500/20';
+        if (dlv.priority === 'High') priorityColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+        if (dlv.priority === 'Low') priorityColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+
+        // Status Badge styling helper
+        let statusColor = 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+        if (dlv.status === 'In Transit') statusColor = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+        if (dlv.status === 'Delivered') statusColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+        if (dlv.status === 'Pending') statusColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+
+        const rowHtml = `
+          <tr class="hover:bg-slate-900/20 transition">
+            <td class="py-4 font-bold text-white font-mono">${dlv.id}</td>
+            <td class="py-4 text-slate-300">${dlv.address}</td>
+            <td class="py-4 text-slate-400 flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-[6px] text-brand-400">${dlv.driver[0]}</span>
+              <span>${dlv.driver}</span>
+            </td>
+            <td class="py-4">
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-full border ${statusColor}">${dlv.status}</span>
+            </td>
+            <td class="py-4">
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-full border ${priorityColor}">${dlv.priority}</span>
+            </td>
+            <td class="py-4 text-slate-400 font-medium">${dlv.eta}</td>
+          </tr>
+        `;
+
+        dashList.innerHTML += rowHtml;
+
+        // Populate management view with actions
+        const manageRowHtml = `
+          <tr class="hover:bg-slate-900/20 transition">
+            <td class="py-4 font-bold text-white font-mono">${dlv.id}</td>
+            <td class="py-4 text-slate-300">${dlv.address}</td>
+            <td class="py-4 text-slate-400">${dlv.driver}</td>
+            <td class="py-4">
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-full border ${statusColor}">${dlv.status}</span>
+            </td>
+            <td class="py-4">
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-full border ${priorityColor}">${dlv.priority}</span>
+            </td>
+            <td class="py-4 text-slate-400">${dlv.eta}</td>
+            <td class="py-4 text-right">
+              <div class="flex items-center justify-end space-x-2">
+                ${dlv.status !== 'Delivered' ? `
+                  <button onclick="markDelivered('${dlv.id}')" class="p-1.5 hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/30 text-emerald-400 rounded-lg transition" title="Complete Delivery">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+                  </button>
+                ` : ''}
+                <button onclick="deleteDelivery('${dlv.id}')" class="p-1.5 hover:bg-red-500/10 border border-transparent hover:border-red-500/30 text-red-400 rounded-lg transition" title="Cancel Dispatch">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+        manageList.innerHTML += manageRowHtml;
+      });
+    }
+
+    // ACTIONS AND DISPATCH CREATIONS
+    function openAddDeliveryModal() {
+      document.getElementById('add-delivery-modal').classList.remove('hidden');
+    }
+
+    function closeAddDeliveryModal() {
+      document.getElementById('add-delivery-modal').classList.add('hidden');
+    }
+
+    function handleAddDeliverySubmit(e) {
+      e.preventDefault();
+      
+      const select = document.getElementById('dest-address');
+      const selectedOpt = select.options[select.selectedIndex];
+      
+      const newDlv = {
+        id: `DLV-${Math.floor(1000 + Math.random() * 9000)}`,
+        address: select.value,
+        driver: document.getElementById('driver').value,
+        status: 'Pending',
+        priority: document.getElementById('priority').value,
+        lat: parseFloat(selectedOpt.dataset.lat),
+        lng: parseFloat(selectedOpt.dataset.lng),
+        eta: 'Calculating...',
+        weight: parseInt(document.getElementById('package-weight').value)
+      };
+
+      deliveries.push(newDlv);
+      
+      closeAddDeliveryModal();
+      initDashboardView();
+      refreshMapMarkers();
+
+      logEvent('DISPATCH', `New delivery order ${newDlv.id} successfully created and dispatched for route optimizations.`);
+      
+      // Auto-recalculate ACO route after new order
+      solveAcoClientSide();
+    }
+
+    function markDelivered(id) {
+      const dlv = deliveries.find(d => d.id === id);
+      if (dlv) {
+        dlv.status = 'Delivered';
+        dlv.eta = 'Completed';
+        initDashboardView();
+        refreshMapMarkers();
+        logEvent('DISPATCH', `Delivery completed successfully for dispatch order ${id}.`);
+        solveAcoClientSide();
+      }
+    }
+
+    function deleteDelivery(id) {
+      deliveries = deliveries.filter(d => d.id !== id);
+      initDashboardView();
+      refreshMapMarkers();
+      logEvent('SYSTEM', `Dispatch order ${id} deleted and removed from fleet buffer.`);
+      solveAcoClientSide();
+    }
+
+    function saveAcoParams(e) {
+      e.preventDefault();
+      
+      acoParams = {
+        alpha: parseFloat(document.getElementById('param-alpha').value),
+        beta: parseFloat(document.getElementById('param-beta').value),
+        rho: parseFloat(document.getElementById('param-rho').value),
+        ants: parseInt(document.getElementById('param-ants').value),
+        iterations: parseInt(document.getElementById('param-iterations').value),
+        capacity: parseInt(document.getElementById('param-capacity').value)
+      };
+
+      logEvent('ENGINE', 'Custom Swarm parameters updated. Re-solving optimization paths...');
+      solveAcoClientSide();
+      
+      // Switch back to visualizer
+      switchTab('map');
+    }
+  </script>
+</body>
+</html>

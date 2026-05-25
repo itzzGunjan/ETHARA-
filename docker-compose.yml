@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # Fast API backend service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: logistics_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - JWT_SECRET=supersecurelogisticssecretkey128bit
+      - MONGO_URI=mongodb://db:27017/logistics
+    depends_on:
+      - db
+    restart: always
+
+  # React frontend service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: logistics_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: always
+
+  # MongoDB local cache instance
+  db:
+    image: mongo:latest
+    container_name: logistics_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: always
+
+volumes:
+  mongo_data:
