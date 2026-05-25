@@ -1,4 +1,4 @@
-# 🚚 LogisticsAI - Dynamic Route Optimization & Fleet Swarm Dashboard
+#  LogisticsAI - Dynamic Route Optimization & Fleet Swarm Dashboard
 
 LogisticsAI is a production-grade full-stack fleet logistics dashboard inspired by advanced modern enterprise services like Amazon Logistics. The application leverages **Ant Colony Optimization (ACO)** swarm intelligence algorithms to solve the Vehicle Routing Problem (VRP) and Travelling Salesperson Problem (TSP) in dynamic urban settings.
 
